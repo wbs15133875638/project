@@ -15,4 +15,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/project/alteration-memo")
 public class AlterationMemoController{
 
+	int i = 0;
 }
