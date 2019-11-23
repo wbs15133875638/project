@@ -1,4 +1,4 @@
-package com.botianzu.project.controller;
+﻿package com.botianzu.project.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,5 +15,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/project/alteration-memo")
 public class AlterationMemoController{
 
-	int i = 0;
+	int i = 1;
 }
