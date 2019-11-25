@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 
@@ -62,6 +63,7 @@ public class AuditFlow implements Serializable {
     /**
      * 流程进度
      */
+    @TableField(exist = false)
     private List<ApprovedMemo> approvedMemos;
 
     /**

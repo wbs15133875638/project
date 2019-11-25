@@ -79,6 +79,11 @@ public class AlterationMemo implements Serializable {
      * 备注
      */
     private String remark;
+    
+    /**
+     * 对应的审核流程的编号
+     */
+    private String flowCode;
 
 	public Integer getId() {
 		return id;
@@ -176,5 +181,13 @@ public class AlterationMemo implements Serializable {
 		this.remark = remark;
 	}
 
+	public String getFlowCode() {
+		return flowCode;
+	}
 
+	public void setFlowCode(String flowCode) {
+		this.flowCode = flowCode;
+	}
+
+	
 }

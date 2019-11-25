@@ -43,7 +43,7 @@ public class AlterationMemoController{
 	public IPage<AlterationMemo> findAlterationMemoByCondition(Integer start, Integer pageSize,
 			Date startCreateeDate, Date endCreateeDate,Project project) {
 		
-		IPage<AlterationMemo> alterationMemos =  iAlterationMemoService.findAlterationMemoByCondition(
+		IPage<AlterationMemo> alterationMemos = iAlterationMemoService.findAlterationMemoByCondition(
 				start,pageSize,startCreateeDate,endCreateeDate,project);
 		
 		

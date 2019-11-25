@@ -3,6 +3,7 @@ package com.botianzu.project.service;
 import com.botianzu.project.entity.Project;
 import com.botianzu.project.entity.vo.ChangeProjectRequest;
 import com.botianzu.project.entity.vo.ProjectDetaisVO;
+import com.botianzu.project.entity.vo.ProjectRecordDetailsVO;
 import com.botianzu.project.entity.vo.ProjectRequest;
 
 import java.util.HashMap;
@@ -66,5 +67,9 @@ public interface IProjectService extends IService<Project> {
 	boolean changeProject(ChangeProjectRequest changeProjectRequest);
 
 	boolean auditDraft(String code, Integer passed, String user);
+	
+	public ProjectRecordDetailsVO getProjectRecordDetail(String auditFlowCode);
+
+	boolean auditChange(String code, Integer passed, String user);
 
 }

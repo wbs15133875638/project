@@ -11,7 +11,9 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -19,6 +21,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.botianzu.project.entity.AlterationMemo;
 import com.botianzu.project.entity.ApprovedMemo;
 import com.botianzu.project.entity.AuditFlow;
 import com.botianzu.project.entity.Industry;
@@ -37,12 +40,15 @@ import com.botianzu.project.entity.RequireRecord;
 import com.botianzu.project.entity.SoftwareDesign;
 import com.botianzu.project.entity.SoftwareDesignRecord;
 import com.botianzu.project.entity.SoftwaredesignbackstageTechnology;
+import com.botianzu.project.entity.SoftwaredesignbackstageTechnologyRecord;
 import com.botianzu.project.entity.SoftwaredesignfrontTechnology;
+import com.botianzu.project.entity.SoftwaredesignfrontTechnologyRecord;
 import com.botianzu.project.entity.Technology;
 import com.botianzu.project.entity.Test;
 import com.botianzu.project.entity.TestRecord;
 import com.botianzu.project.entity.vo.ChangeProjectRequest;
 import com.botianzu.project.entity.vo.ProjectDetaisVO;
+import com.botianzu.project.entity.vo.ProjectRecordDetailsVO;
 import com.botianzu.project.entity.vo.ProjectRequest;
 import com.botianzu.project.entity.vo.ProjectVo;
 import com.botianzu.project.mapper.AuditFlowMapper;
@@ -62,7 +68,9 @@ import com.botianzu.project.mapper.RequireRecordMapper;
 import com.botianzu.project.mapper.SoftwareDesignMapper;
 import com.botianzu.project.mapper.SoftwareDesignRecordMapper;
 import com.botianzu.project.mapper.SoftwaredesignbackstageTechnologyMapper;
+import com.botianzu.project.mapper.SoftwaredesignbackstageTechnologyRecordMapper;
 import com.botianzu.project.mapper.SoftwaredesignfrontTechnologyMapper;
+import com.botianzu.project.mapper.SoftwaredesignfrontTechnologyRecordMapper;
 import com.botianzu.project.mapper.TechnologyMapper;
 import com.botianzu.project.mapper.TestMapper;
 import com.botianzu.project.mapper.TestRecordMapper;
@@ -159,6 +167,12 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 	
 	@Autowired
 	private RequireModelRecordMapper requireModelRecordMapper;
+	
+	@Autowired
+	private SoftwaredesignfrontTechnologyRecordMapper softwaredesignfrontTechnologyRecordMapper;
+	
+	@Autowired
+	private SoftwaredesignbackstageTechnologyRecordMapper softwaredesignbackstageTechnologyRecordMapper;
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -360,32 +374,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 				projectVo.setDescription(project.getIntroduction());
 
 				if (project.getStatus() != null) {
-					String status = "";
-					switch (project.getStatus()) {
-					case 1:
-						status = "草稿";
-						break;
-					case 2:
-						status = "审核中";
-						break;
-					case 3:
-						status = "审核通过";
-						break;
-					case 4:
-						status = "审核未通过";
-						break;
-					case 5:
-						status = "变更中";
-						break;
-					case 6:
-						status = "变更成功";
-						break;
-					case 7:
-						status = "变更失败";
-						break;
-					default:
-						break;
-					}
+					String status = getProjectStatus(project.getStatus());
 					projectVo.setStatus(status);
 				}
 
@@ -493,8 +482,11 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 		return "";
 	}
 
+	/**
+	 * 修改项目
+	 */
 	@Override
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRED)
 	public boolean editProjectInfo(String projectCode, ProjectRequest projectRequest) {
 
 		Project project = baseMapper.selectById(projectCode);
@@ -645,6 +637,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 			projectDetaisVO.setLabelName(project.getLabels()); // 项目标签
 			projectDetaisVO.setProjectIndustry(findIndustryByCode(project.getProjectIndustryCode()));
 			projectDetaisVO.setProjectCodeFileUrl(project.getCodePath());
+			projectDetaisVO.setStatus(getProjectStatus(project.getStatus()));
 		}
 
 		// 查询项目实施(计划安排)
@@ -734,10 +727,10 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 	 * 提交变更项目
 	 * 
 	 * @param changeProjectRequest
-	 * @return flag 是否变更成功
+	 * @return flag 是否成功
 	 */
 	@Override
-	@Transactional(rollbackFor=Exception.class)
+	@Transactional(propagation = Propagation.REQUIRED)
 	public boolean changeProject(ChangeProjectRequest changeProjectRequest) {
 
 		// 判断参数是否为空 若为空return false
@@ -800,6 +793,30 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 		softwareDesignRecord.setCode(UUIDCode);
 		softwareDesignRecord.setDeleted(1);
 		softwareDesignRecord.setMemoCode(UUIDCode); // 关联变更流程
+		
+		//添加技术记录
+		String clientTechnologyCodes = changeProjectRequest.getClientTechnologyCodes();
+		if(StringUtils.isNotBlank(clientTechnologyCodes)) {
+			String[] split = clientTechnologyCodes.split(",");
+			for (String string : split) {
+				SoftwaredesignfrontTechnologyRecord client = new SoftwaredesignfrontTechnologyRecord();
+				client.setMemoCode(UUIDCode);
+				client.setTechnologyCode(string);
+				client.setSoftwareDesignCode(softwareDesignRecord.getCode());
+				softwaredesignfrontTechnologyRecordMapper.insert(client);
+			}
+		}
+		String serverTechnologyCodes = changeProjectRequest.getServerTechnologyCodes();
+		if(StringUtils.isNotBlank(serverTechnologyCodes)) {
+			String[] split = serverTechnologyCodes.split(",");
+			for (String string : split) {
+				SoftwaredesignbackstageTechnologyRecord service = new SoftwaredesignbackstageTechnologyRecord();
+				service.setMemoCode(UUIDCode);
+				service.setTechnologyCode(string);
+				service.setSoftwareDesignCode(softwareDesignRecord.getCode());
+				softwaredesignbackstageTechnologyRecordMapper.insert(service);
+			}
+		}
 
 		// 项目实施记录
 		MplementationRecord mplementationRecord = new MplementationRecord();
@@ -845,7 +862,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 		productDesignRecord.setMemoCode(UUIDCode); // 关联变更流程
 
 		try {
-
+			//添加模块记录
 			List<RequireModel> models = changeProjectRequest.getModels();
 
 			for (RequireModel requireModel : models) {
@@ -888,7 +905,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 		return flag;
 	}
 
-	
+	/**
+	 * 审核项目
+	 */
 	@Override
 	@Transactional
 	public boolean auditDraft(String code, Integer passed, String user) {
@@ -905,13 +924,19 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 		
 		UpdateWrapper<AuditFlow> auditFlowUpdateWrapper = new UpdateWrapper<AuditFlow>();
 		auditFlowUpdateWrapper.eq("code",code);
+		QueryWrapper<Record> recordQueryWrapper = new QueryWrapper<Record>();
+		recordQueryWrapper.eq("audit_code", code);
+		Record projectRecord = recordMapper.selectOne(recordQueryWrapper);
 		if(passed==1) {
 			//审核通过
 			approvedMemo.setApprovalResult(passed);
 			if("院长".equals(user)) {
 				auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_TWO_PASS);
 				//修改项目数据
-				
+				ProjectRecordDetailsVO projectRecordDetail = getProjectRecordDetail(code);
+				ProjectRequest projectRequest = new ProjectRequest();
+				PropertyCopyUtils.copy(projectRequest,projectRecordDetail);
+				editProjectInfo(projectRecord.getCode(),projectRequest);
 			}else if("主任".equals(user)) {
 				auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_ONE_PASS);
 			}
@@ -920,9 +945,17 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 			if("院长".equals(user)) {
 				auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_TWO_NOPASS);
 				//修改项目状态
+				Project project = baseMapper.selectById(projectRecord.getCode());
+				project.setStatus(Project.STATUS_AUDIT_NOPASS);
+				project.setUpdateTime(now);
+				baseMapper.updateById(project);
 			}else if("主任".equals(user)) {
 				auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_ONE_NOPASS);
 				//修改项目状态
+				Project project = baseMapper.selectById(projectRecord.getCode());
+				project.setStatus(Project.STATUS_AUDIT_NOPASS);
+				project.setUpdateTime(now);
+				baseMapper.updateById(project);
 			}
 		}
 		//修改流程状态
@@ -931,4 +964,206 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 		return true;
 	}
 
+	/**
+	 * 查询项目记录详情
+	 * @param auditFlowCode
+	 * @return 
+	 */
+	public ProjectRecordDetailsVO getProjectRecordDetail(String auditFlowCode) {
+		
+		ProjectRecordDetailsVO projectRecordDetail = new ProjectRecordDetailsVO();
+		
+		// 查询项目记录
+		QueryWrapper<Record> recordQueryWrapper = new QueryWrapper<Record>();
+		recordQueryWrapper.eq("audit_code", auditFlowCode);
+		Record projectRecord = recordMapper.selectOne(recordQueryWrapper);
+		projectRecordDetail.setName(projectRecord.getName());
+		projectRecordDetail.setProjectCodeFileUrl(projectRecord.getCodePath()) ;
+		projectRecordDetail.setProjectDesc(projectRecord.getIntroduction());
+		projectRecordDetail.setProjectType(findProjectTypeByCode(projectRecord.getProjectType()));
+		projectRecordDetail.setProjectIndustry(findIndustryByCode(projectRecord.getProjectIndustryCode()));
+		
+		// 查询项目需求
+		QueryWrapper<RequireRecord> requireRecordQueryWrapper = new QueryWrapper<RequireRecord>();
+		requireRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		RequireRecord requireRecord = requireRecordMapper.selectOne(requireRecordQueryWrapper);
+		
+		projectRecordDetail.setProjectDocumentUrl(requireRecord.getDocumentPath()); //项目需求文档
+		projectRecordDetail.setProjectFlowDiagramUrl(requireRecord.getFlowDiagram()); //流程图
+		
+		
+		//查询需求模块记录
+		QueryWrapper<RequireModelRecord> requireModelRecordQueryWrapper = new QueryWrapper<RequireModelRecord>();
+		requireModelRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		List<RequireModelRecord> requireModelRecords = requireModelRecordMapper.selectList(requireModelRecordQueryWrapper);
+		
+		//查询产品设计记录
+		QueryWrapper<ProductDesignRecord> productDesignRecordQueryWrapper = new QueryWrapper<ProductDesignRecord>();
+		requireModelRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		ProductDesignRecord productDesignRecord = productDesignRecordMapper.selectOne(productDesignRecordQueryWrapper);
+		
+		projectRecordDetail.setUeUrl(productDesignRecord.getUeName()); //低保真
+		projectRecordDetail.setUiUrl(productDesignRecord.getUiName()); //高保真
+		
+		
+		//查询软件设计记录
+		QueryWrapper<SoftwareDesignRecord> softwareDesignRecordQueryWrapper = new QueryWrapper<SoftwareDesignRecord>();
+		softwareDesignRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		SoftwareDesignRecord softwareDesignRecord = softwareDesignRecordMapper.selectOne(softwareDesignRecordQueryWrapper);
+		
+		projectRecordDetail.setProjectSiteStructureUrl(softwareDesignRecord.getSiteStructure()); //架构图
+		projectRecordDetail.setProjectFunctionDocumentUrl(softwareDesignRecord.getServiceFile()); //功能设计文档
+		projectRecordDetail.setProjectDatabaseDocumentUrl(softwareDesignRecord.getDatabaseFile()); //数据库设计文档
+		
+		
+		//查询前台技术记录
+		QueryWrapper<SoftwaredesignfrontTechnologyRecord> softwaredesignfrontTechnologyRecordQueryWrapper = new QueryWrapper<SoftwaredesignfrontTechnologyRecord>();
+		softwaredesignfrontTechnologyRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		List<SoftwaredesignfrontTechnologyRecord> clients = softwaredesignfrontTechnologyRecordMapper.selectList(softwaredesignfrontTechnologyRecordQueryWrapper);
+		String clientNames = "";
+		String clientCodes = "";
+		ArrayList<String> clientCodeList = new ArrayList<String>();
+		for (SoftwaredesignfrontTechnologyRecord softwaredesignfrontTechnologyRecord : clients) {
+			clientCodes = clientCodes+softwaredesignfrontTechnologyRecord.getTechnologyCode()+",";
+			clientCodeList.add(softwaredesignfrontTechnologyRecord.getTechnologyCode());
+		}
+		QueryWrapper<Technology> t1queryWrapper = new QueryWrapper<Technology>();
+		t1queryWrapper.in("code",clientCodeList);
+		List<Technology> clientTs = technologyMapper.selectList(t1queryWrapper);
+		for (Technology technology : clientTs) {
+			clientNames = clientNames+technology.getName()+",";
+		}
+		projectRecordDetail.setClientTechnologyCodes(clientCodes);
+		//查询后台技术记录
+		QueryWrapper<SoftwaredesignbackstageTechnologyRecord> softwaredesignbackstageTechnologyRecordQueryWrapper = new QueryWrapper<SoftwaredesignbackstageTechnologyRecord>();
+		softwaredesignbackstageTechnologyRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		List<SoftwaredesignbackstageTechnologyRecord> services = softwaredesignbackstageTechnologyRecordMapper.selectList(softwaredesignbackstageTechnologyRecordQueryWrapper);
+		String serviceNames = "";
+		String serviceCodes = "";
+		ArrayList<String> serviceCodeList = new ArrayList<String>();
+		for (SoftwaredesignbackstageTechnologyRecord softwaredesignbackstageTechnologyRecord : services) {
+			serviceCodes = clientCodes+softwaredesignbackstageTechnologyRecord.getTechnologyCode()+",";
+			serviceCodeList.add(softwaredesignbackstageTechnologyRecord.getTechnologyCode());
+		}
+		QueryWrapper<Technology> t2queryWrapper = new QueryWrapper<Technology>();
+		t1queryWrapper.in("code",clientCodeList);
+		List<Technology> serviceTs = technologyMapper.selectList(t1queryWrapper);
+		for (Technology technology : serviceTs) {
+			serviceNames = clientNames+technology.getName()+",";
+		}
+		projectRecordDetail.setServerTechnologyCodes(serviceCodes);
+		projectRecordDetail.setTechnology(serviceNames+clientNames);
+		
+		
+		//查询项目实施记录
+		QueryWrapper<MplementationRecord> mplementationRecordQueryWrapper = new QueryWrapper<MplementationRecord>();
+		softwareDesignRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		MplementationRecord mplementationRecord = mplementationRecordMapper.selectOne(mplementationRecordQueryWrapper);
+		
+		projectRecordDetail.setBeginDate(mplementationRecord.getStartTime().toLocaleString()); //开始时间
+		projectRecordDetail.setEndDate(mplementationRecord.getEndTime().toLocaleString()); //结束时间
+		
+		//查询测试记录
+		QueryWrapper<TestRecord> testRecordQueryWrapper = new QueryWrapper<TestRecord>();
+		testRecordQueryWrapper.eq("memo_code", auditFlowCode);
+		TestRecord testRecord = testRecordMapper.selectOne(testRecordQueryWrapper);
+		
+		projectRecordDetail.setTestPlanUrl(testRecord.getTestPlan()); //测试计划
+		projectRecordDetail.setTestUseCaseUrl(testRecord.getTestBeans()); //测试实例
+		projectRecordDetail.setTestReport(testRecord.getTestReport()); //测试报告
+		
+		return projectRecordDetail;
+	}
+
+	/**
+	 * 变更审核记录
+	 */
+	@Override
+	public boolean auditChange(String code, Integer passed, String user) {
+		//创建一条审核记录
+				AlterationMemo alterationMemo = new AlterationMemo();
+				Date now = new Date();
+				alterationMemo.setCode(UUIDUtils.createUUIDCode());
+				alterationMemo.setCreateTime(now);
+				alterationMemo.setUpdateTime(now);
+				alterationMemo.setApprovalTime(now);
+				alterationMemo.setApprovalPeople(user);
+				alterationMemo.setFlowCode(code);
+				
+				UpdateWrapper<AuditFlow> auditFlowUpdateWrapper = new UpdateWrapper<AuditFlow>();
+				auditFlowUpdateWrapper.eq("code",code);
+				QueryWrapper<Record> recordQueryWrapper = new QueryWrapper<Record>();
+				recordQueryWrapper.eq("audit_code", code);
+				Record projectRecord = recordMapper.selectOne(recordQueryWrapper);
+				if(passed==1) {
+					//审核通过
+					alterationMemo.setApprovalResult(passed);
+					if("院长".equals(user)) {
+						auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_TWO_PASS);
+						//修改项目数据
+						ProjectRecordDetailsVO projectRecordDetail = getProjectRecordDetail(code);
+						ProjectRequest projectRequest = new ProjectRequest();
+						PropertyCopyUtils.copy(projectRequest,projectRecordDetail);
+						editProjectInfo(projectRecord.getCode(),projectRequest);
+					}else if("主任".equals(user)) {
+						auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_ONE_PASS);
+					}
+				}else {
+					//审核不通过
+					if("院长".equals(user)) {
+						auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_TWO_NOPASS);
+						//修改项目状态
+						Project project = baseMapper.selectById(projectRecord.getCode());
+						project.setStatus(Project.STATUS_CHANGE_NOPASS);
+						project.setUpdateTime(now);
+						baseMapper.updateById(project);
+					}else if("主任".equals(user)) {
+						auditFlowUpdateWrapper.set("status",AuditFlow.STATUS_ONE_NOPASS);
+						//修改项目状态
+						Project project = baseMapper.selectById(projectRecord.getCode());
+						project.setStatus(Project.STATUS_CHANGE_NOPASS);
+						project.setUpdateTime(now);
+						baseMapper.updateById(project);
+					}
+				}
+				//修改流程状态
+				auditFlowMapper.update(null, auditFlowUpdateWrapper);
+				
+				return true;
+	}
+	
+	/**
+	 * 通过状态编号获取状态值
+	 * @param code
+	 * @return
+	 */
+	public String getProjectStatus(Integer code) {
+		String status = "";
+		switch (code) {
+		case 1:
+			status = "草稿";
+			break;
+		case 2:
+			status = "审核中";
+			break;
+		case 3:
+			status = "审核通过";
+			break;
+		case 4:
+			status = "审核未通过";
+			break;
+		case 5:
+			status = "变更中";
+			break;
+		case 6:
+			status = "变更成功";
+			break;
+		case 7:
+			status = "变更失败";
+			break;
+		default:
+			break;
+		}
+		return status;
+	}
 }

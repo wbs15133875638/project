@@ -2,6 +2,7 @@ package com.botianzu.project.service;
 
 import com.botianzu.project.entity.AuditFlow;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -17,6 +18,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface IAuditFlowService extends IService<AuditFlow> {
 
 	Map<String, Object> findAudits(Integer curpage, String submitUserName, String beginTime, String endTime,
-			String name);
+			String name, Integer status);
+
+	HashMap<String, Object> findDetails(String code);
 
 }

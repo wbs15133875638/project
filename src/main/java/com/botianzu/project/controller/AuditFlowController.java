@@ -1,8 +1,10 @@
 package com.botianzu.project.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,7 +21,7 @@ import com.botianzu.project.service.IAuditFlowService;
  * @since 2019-11-20
 */
 @RestController
-@RequestMapping("/project/audit-flow")
+@RequestMapping("/auditflow")
 public class AuditFlowController{
 
 	@Autowired
@@ -34,9 +36,22 @@ public class AuditFlowController{
 	 * @param name 项目名
 	 */
 	@RequestMapping
-	public void findAudits(Integer curpage,String submitUserName,String beginTime,String endTime,String name) {
+	public Map<String,Object> findAudits(Integer curpage,String submitUserName,String beginTime,String endTime,String name,Integer status) {
 		
-		Map<String,Object> map = iAuditFlowService.findAudits(curpage,submitUserName,beginTime,endTime,name);
+		if(curpage==null||curpage<1) {
+			curpage = 1;
+		}
 		
+		Map<String,Object> map = iAuditFlowService.findAudits(curpage,submitUserName,beginTime,endTime,name,status);
+		return map;
+	}
+	
+	@RequestMapping("details")
+	public HashMap<String,Object> findAuditFlowDetail(String code) {
+		if(StringUtils.isNotBlank(code)) {
+			HashMap<String,Object> findDetails = iAuditFlowService.findDetails(code);
+			return findDetails;
+		}
+		return null;
 	}
 }

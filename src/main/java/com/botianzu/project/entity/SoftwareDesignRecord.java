@@ -74,15 +74,15 @@ public class SoftwareDesignRecord implements Serializable {
     
 
     
-    /**
-     * 项目前台技术
-     */
-    private String clientTechnologies;
-    
-    /**
-     * 项目后台技术
-     */
-    private String serviceTechnologies;
+//    /**
+//     * 项目前台技术
+//     */
+//    private String clientTechnologies;
+//    
+//    /**
+//     * 项目后台技术
+//     */
+//    private String serviceTechnologies;
 
 	public Integer getId() {
 		return id;
@@ -162,22 +162,6 @@ public class SoftwareDesignRecord implements Serializable {
 
 	public void setMemoCode(String memoCode) {
 		this.memoCode = memoCode;
-	}
-
-	public String getClientTechnologies() {
-		return clientTechnologies;
-	}
-
-	public void setClientTechnologies(String clientTechnologies) {
-		this.clientTechnologies = clientTechnologies;
-	}
-
-	public String getServiceTechnologies() {
-		return serviceTechnologies;
-	}
-
-	public void setServiceTechnologies(String serviceTechnologies) {
-		this.serviceTechnologies = serviceTechnologies;
 	}
 
 	public String getProjectCode() {

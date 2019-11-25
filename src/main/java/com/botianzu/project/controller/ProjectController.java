@@ -25,6 +25,7 @@ import com.botianzu.project.entity.ProjectLabel;
 import com.botianzu.project.entity.ProjectStatus;
 import com.botianzu.project.entity.ProjectType;
 import com.botianzu.project.entity.vo.ProjectDetaisVO;
+import com.botianzu.project.entity.vo.ProjectRecordDetailsVO;
 import com.botianzu.project.entity.vo.ProjectRequest;
 import com.botianzu.project.service.IIndustryService;
 import com.botianzu.project.service.IProjectLabelService;
@@ -143,6 +144,7 @@ public class ProjectController{
 		if(!"".equals(labelName.trim())) {
 			queryWrapper.like("labels", labelName.trim());
 		}
+		queryWrapper.orderByDesc("create_time");
 		
 		if(curpage==null||curpage<1) {
 			curpage = 1;
@@ -211,12 +213,55 @@ public class ProjectController{
 		return projectDetaisVO;
 	}
 	
-	//审核草稿
-	@RequestMapping("audit")
+	/**
+	 * 审核草稿
+	 * @param code 审批流程编号
+	 * @param passed 是否通过
+	 * @param user 审批人
+	 * @return
+	 */
+	@RequestMapping("auditdraft")
 	public boolean auditDraft(String code,Integer passed,String user) {
 		
 		boolean result = iProjectService.auditDraft(code,passed,user);
 		
+		return result;
+	}
+	
+	/**
+	 * 项目审批流程编号
+	 * @param code
+	 * @return
+	 */
+	@RequestMapping("/recordDetail")
+	public ProjectRecordDetailsVO findProjectRecordDetail(String code) {
+		ProjectRecordDetailsVO projectRecordDetail = iProjectService.getProjectRecordDetail(code);
+		return projectRecordDetail;
+	}
+	
+	/**
+	 * 审核变更
+	 * @param code
+	 * @param passed
+	 * @param user
+	 * @return
+	 */
+	@RequestMapping("/auditchange")
+	public boolean auditChange(String code,Integer passed,String user) {
+		
+		boolean result = iProjectService.auditChange(code,passed,user); 
+		
+		return true;
+	}
+	/**
+	 * 修改项目
+	 * @param projectCode
+	 * @param projectRequest
+	 * @return
+	 */
+	public boolean editProjectInfo(String projectCode, ProjectRequest projectRequest) {
+		
+		boolean result = iProjectService.editProjectInfo(projectCode, projectRequest);
 		return result;
 	}
 }

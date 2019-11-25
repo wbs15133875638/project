@@ -5,7 +5,7 @@ package com.botianzu.project.entity.vo;
  * @author ASUS
  *
  */
-public class ProjectDetaisVO {
+public class ProjectRecordDetailsVO {
 	
 	/**
 	 * 项目名称
@@ -121,19 +121,14 @@ public class ProjectDetaisVO {
 	private String projectCodeFileUrl;
 	
 	/**
-	 * 状态
+	 * 客户端技术
 	 */
-	private String status;
-
+	private String clientTechnologyCodes;
 	
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
+	/**
+	 * 服务端技术
+	 */
+	private String serverTechnologyCodes;
 
 	public String getName() {
 		return name;
@@ -313,52 +308,20 @@ public class ProjectDetaisVO {
 		this.projectCodeFileUrl = projectCodeFileUrl;
 	}
 
-	public ProjectDetaisVO(String name, String code, String uploadUser, String projectType, String projectIndustry,
-			String labelName, String projectDesc, String beginDate, String endDate, String technology,
-			String projectDocumentUrl, String projectFlowDiagramUrl, String projectSiteStructureUrl,
-			String projectPlanUrl, String projectFunctionDocumentUrl, String projectDatabaseDocumentUrl,
-			String testPlanUrl, String testUseCaseUrl, String testReport, String ueUrl, String uiUrl) {
-		super();
-		this.name = name;
-		this.code = code;
-		this.uploadUser = uploadUser;
-		this.projectType = projectType;
-		this.projectIndustry = projectIndustry;
-		this.labelName = labelName;
-		this.projectDesc = projectDesc;
-		this.beginDate = beginDate;
-		this.endDate = endDate;
-		this.technology = technology;
-		this.projectDocumentUrl = projectDocumentUrl;
-		this.projectFlowDiagramUrl = projectFlowDiagramUrl;
-		this.projectSiteStructureUrl = projectSiteStructureUrl;
-		this.projectPlanUrl = projectPlanUrl;
-		this.projectFunctionDocumentUrl = projectFunctionDocumentUrl;
-		this.projectDatabaseDocumentUrl = projectDatabaseDocumentUrl;
-		this.testPlanUrl = testPlanUrl;
-		this.testUseCaseUrl = testUseCaseUrl;
-		this.testReport = testReport;
-		this.ueUrl = ueUrl;
-		this.uiUrl = uiUrl;
+	public String getClientTechnologyCodes() {
+		return clientTechnologyCodes;
 	}
 
-	public ProjectDetaisVO() {
-		super();
-		// TODO Auto-generated constructor stub
+	public void setClientTechnologyCodes(String clientTechnologyCodes) {
+		this.clientTechnologyCodes = clientTechnologyCodes;
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	public String getServerTechnologyCodes() {
+		return serverTechnologyCodes;
+	}
+
+	public void setServerTechnologyCodes(String serverTechnologyCodes) {
+		this.serverTechnologyCodes = serverTechnologyCodes;
+	}
 	
 }
